@@ -1,40 +1,11 @@
 functions:
-  "fetch source" :
-    - command: git.get_project
-      params:
-        directory: src
-    - command: shell.exec
-      params:
-        working_dir: src
-        script: |
-          echo "this is a 2nd command in the function!"
-          ls
-  "debug":
-    command: shell.exec
-    params:
-      script: |
-        echo "i am a debug function."
-  "run a task that fails" :
-    command: shell.exec
-    params:
-      working_dir: src
-      script: |
-        echo "this is a function with only a single command to run!"
-        ./run.py results fail
 
-  "run a task that passes" :
+  "func" :
     command: shell.exec
     params:
       working_dir: src
       script: |
         ./run.py results pass
-
-  "run a function with an arg":
-    command: shell.exec
-    params:
-      working_dir: src
-      script: |
-        echo "I was called with ${foobar}"
 
 pre:
   command: shell.exec
@@ -54,44 +25,16 @@ post:
       file_location: src/results.json
 
 tasks:
-- name: compile
+- name: A
   depends_on: []
   commands:
-    - func: "fetch source"
-    - func: "run a task that passes" 
-    - func: "run a function with an arg"
-      vars:
-        foobar: "TESTING: ONE"
-    - func: "run a function with an arg"
-      vars:
-        foobar: "TESTING: TWO"
-
-- name: passing_test 
+    - func: "func"
+- name: B
   depends_on: 
-  - name: compile
+  - name: A
+    variant: ubuntu
   commands:
-    - func: "fetch source"
-    - func: "run a task that passes"
-
-- name: failing_test 
-  depends_on: 
-  - name: compile
-  commands:
-    - func: "fetch source"
-    - func: "run a task that fails"
-
-- name: timeout_test
-  depends_on: 
-  - name: compile
-  commands:
-    - func: "fetch source"
-    - command: shell.exec
-      timeout_secs: 20
-      params:
-        working_dir: src
-        script: |
-           echo "this is going to timeout"
-           ./run.py timeout
+    - func: "func"
 
 modules:
 - name: render-module
@@ -108,19 +51,13 @@ buildvariants:
   expansions:
     test_flags: "blah blah"
   tasks:
-  - name: compile
-  - name: passing_test
-  - name: failing_test
-  - name: timeout_test
+  - name: B
 - name: ubuntu
   display_name: Ubuntu
   modules: ["render-module"]
   run_on:
-  - ubuntu1404-test
+  - localtestdistro
   expansions:
     test_flags: "blah blah"
   tasks:
-  - name: compile
-  - name: passing_test
-  - name: failing_test
-  - name: timeout_test
+  - name: A
